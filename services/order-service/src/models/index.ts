@@ -3,6 +3,7 @@ export { OrderItem } from "./orderItem";
 export { OrderStatus } from "./orderStatus";
 export { OutboxEvent } from "./outboxEvent";
 export { OutboxEventStatus } from "./outboxEventStatus";
+export { ProcessedEvent } from "./ProcessedEvent";
 
 export { sequelize } from "./sequelize";
 
