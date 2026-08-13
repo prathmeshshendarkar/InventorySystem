@@ -4,6 +4,7 @@ import router from "./routes";
 import { sequelize } from "../src/models/sequelize";
 import { errorHandler } from "./middleware/errorHandler";
 import { outboxWorker } from "./utils/helpers/container";
+import { startOrderEventConsumer } from "./kafka/consumers/orderEvent.consumer";
 
 const app = express();
 
@@ -21,6 +22,7 @@ const startServer = async () => {
     );
 
     outboxWorker.start();
+    await startOrderEventConsumer();
 
     app.listen(3000, () => {
       console.log(

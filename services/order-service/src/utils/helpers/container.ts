@@ -1,20 +1,21 @@
-import { OUTBOX_POLL_INTERVAL_MS } from "../../constants";
 import {
   OrderRepository,
   OrderItemRepository,
   OutboxRepository,
-  ConsoleOutboxPublisher,
+  ProcessedEventRepository
 } from "../../repositories";
 
 import { OrderService } from "../../services/createOrder/createOrder.service";
 import { OutboxRelayService } from "../../services/outbox/outboxRelay.service";
 import { OutboxWorker } from "../../services/outbox/outboxWorker";
+import { KafkaOutboxPublisher } from "../../services/outbox/kafkaOutboxPublisher";
 
 const orderRepository = new OrderRepository();
 const orderItemRepository = new OrderItemRepository();
-
 const outboxRepository = new OutboxRepository();
-const outboxPublisher = new ConsoleOutboxPublisher();
+const outboxPublisher = new KafkaOutboxPublisher();
+const processedEventRepository = new ProcessedEventRepository();
+
 const outboxRelayService = new OutboxRelayService(
   outboxRepository,
   outboxPublisher
@@ -22,7 +23,7 @@ const outboxRelayService = new OutboxRelayService(
 
 export const outboxWorker = new OutboxWorker(
   outboxRelayService,
-  OUTBOX_POLL_INTERVAL_MS
+  2000
 );
 
 export const orderService = new OrderService(
@@ -30,3 +31,5 @@ export const orderService = new OrderService(
   orderItemRepository,
   outboxRepository
 );
+
+export { outboxPublisher, processedEventRepository };
