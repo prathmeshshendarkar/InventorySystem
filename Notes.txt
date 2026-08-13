@@ -1,2 +1,26 @@
-# Event Driven Order System
+# # Event Driven Inventory System
 
+## Order Service
+
+### Git
+1. Branches -> prod, dev, uat
+2. Any feature or fixes will be by creating a new branch out of specific branch and after merge the feature/fix branch will be deleted.
+
+## Database
+1. Run the migration script to build the database
+2. In case of any changes to DB, then perform changes in both models folder and migrations folder(with migration script), that way we can all be sync with all the db changes that are performed.
+
+
+## Stack
+Node.js
+TypeScript
+Express
+Sequelize
+node-pg-migrate
+PostgreSQL
+Kafka
+Docker
+Kubernetes
+Prometheus
+Grafana
+k6

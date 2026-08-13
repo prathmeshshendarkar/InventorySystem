@@ -1,5 +1,9 @@
-import { Pool } from "pg";
+import { Sequelize } from "sequelize";
 
-export const communication_db = new Pool({
-    connectionString: process.env.DATABASE_URL!
-})
+export const sequelize = new Sequelize(
+  process.env.DATABASE_URL!,
+  {
+    dialect: "postgres",
+    logging: false,
+  }
+);
