@@ -1,9 +1,15 @@
-import { Sequelize } from "sequelize";
+export { Order, OrderStatus } from "./order";
+export { OrderItem } from "./orderItem";
 
-export const sequelize = new Sequelize(
-  process.env.DATABASE_URL!,
-  {
-    dialect: "postgres",
-    logging: false,
-  }
-);
+import { Order } from "./order";
+import { OrderItem } from "./orderItem";
+
+Order.hasMany(OrderItem, {
+  foreignKey: "orderId",
+  as: "items",
+});
+
+OrderItem.belongsTo(Order, {
+  foreignKey: "orderId",
+  as: "order",
+});

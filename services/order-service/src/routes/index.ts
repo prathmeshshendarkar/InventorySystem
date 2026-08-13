@@ -1,5 +1,5 @@
 import { Router } from "express";
-import getOrdersRouter from "./get-orders/get-orders.routes";
+import ordersRouter from "./createOrder/createOrder.routes";
 
 const router = Router();
 
@@ -11,6 +11,6 @@ router.get('/health-checkup', (req, res) => {
 })
 
 
-router.use('/orders', getOrdersRouter)
+router.use("/orders", ordersRouter);
 
 export default router;

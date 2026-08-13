@@ -1,13 +1,11 @@
-declare global {
-    namespace Express {
-        interface Request {
-            validated?: {
-                query?: any;
-                params?: any;
-                body?: any;
-            };
-        }
-    }
-}
+import "express-serve-static-core";
 
-export {};
+declare module "express-serve-static-core" {
+  interface Request {
+    validated: {
+      body: any;
+      query: any;
+      params: any;
+    };
+  }
+}
