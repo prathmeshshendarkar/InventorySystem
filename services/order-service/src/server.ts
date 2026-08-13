@@ -3,6 +3,7 @@ import express from "express";
 import router from "./routes";
 import { sequelize } from "../src/models/sequelize";
 import { errorHandler } from "./middleware/errorHandler";
+import { outboxWorker } from "./utils/helpers/container";
 
 const app = express();
 
@@ -18,6 +19,8 @@ const startServer = async () => {
     console.log(
       "Database connection established successfully."
     );
+
+    outboxWorker.start();
 
     app.listen(3000, () => {
       console.log(

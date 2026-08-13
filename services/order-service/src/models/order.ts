@@ -6,14 +6,7 @@ import {
   Model,
 } from "sequelize";
 import { sequelize } from "./sequelize";
-
-export enum OrderStatus {
-  PENDING = "PENDING",
-  INVENTORY_RESERVED = "INVENTORY_RESERVED",
-  PAYMENT_PROCESSING = "PAYMENT_PROCESSING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-}
+import { OrderStatus } from "./orderStatus";
 
 export class Order extends Model<
   InferAttributes<Order>,

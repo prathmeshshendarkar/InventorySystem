@@ -10,6 +10,9 @@
 1. Run the migration script to build the database
 2. In case of any changes to DB, then perform changes in both models folder and migrations folder(with migration script), that way we can all be sync with all the db changes that are performed.
 
+## Patterns
+1. SAGA Pattern in terms of microservices
+2. Outbox Pattern for proper event flow and transcations.
 
 ## Stack
 Node.js
