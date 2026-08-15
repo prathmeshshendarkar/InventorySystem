@@ -2,7 +2,8 @@ import {
   OrderRepository,
   OrderItemRepository,
   OutboxRepository,
-  ProcessedEventRepository
+  ProcessedEventRepository,
+  OrderProjectionRepository,
 } from "../../repositories";
 
 import { OrderService } from "../../services/createOrder/createOrder.service";
@@ -15,6 +16,7 @@ const orderItemRepository = new OrderItemRepository();
 const outboxRepository = new OutboxRepository();
 const outboxPublisher = new KafkaOutboxPublisher();
 const processedEventRepository = new ProcessedEventRepository();
+const orderProjectionRepository = new OrderProjectionRepository();
 
 const outboxRelayService = new OutboxRelayService(
   outboxRepository,
@@ -32,4 +34,8 @@ export const orderService = new OrderService(
   outboxRepository
 );
 
-export { outboxPublisher, processedEventRepository };
+export {
+  outboxPublisher,
+  processedEventRepository,
+  orderProjectionRepository,
+};
