@@ -1,7 +1,10 @@
 import { createKafkaConsumer } from "../kafka.consumer";
 import { parseOrderCreatedEvent } from "../events/orderEvent.parser";
 import { OrderCreatedHandler } from "../handlers/orderCreated.handler";
-import { processedEventRepository } from "../../utils/helpers/container";
+import {
+  processedEventRepository,
+  orderProjectionRepository,
+} from "../../utils/helpers/container";
 
 const ORDER_TOPIC =
   process.env.KAFKA_ORDER_TOPIC || "orders.events";
@@ -9,7 +12,10 @@ const ORDER_TOPIC =
 export const startOrderEventConsumer = async (): Promise<void> => {
   const consumer = await createKafkaConsumer();
 
-  const orderCreatedHandler = new OrderCreatedHandler(processedEventRepository);
+  const orderCreatedHandler = new OrderCreatedHandler(
+    processedEventRepository,
+    orderProjectionRepository
+  );
 
   await consumer.subscribe({
     topic: ORDER_TOPIC,
@@ -21,35 +27,63 @@ export const startOrderEventConsumer = async (): Promise<void> => {
   );
 
   await consumer.run({
-    eachMessage: async ({
-      topic,
-      partition,
-      message,
-    }) => {
-      const value = message.value?.toString();
+  autoCommit: false,
 
-      if (!value) {
-        console.warn("⚠️ Kafka message has no value");
-        return;
-      }
+  eachMessage: async ({
+    topic,
+    partition,
+    message,
+  }) => {
+    const value = message.value?.toString();
 
-      try {
-        const event = parseOrderCreatedEvent(value);
+    if (!value) {
+      console.warn("⚠️ Kafka message has no value");
+      return;
+    }
 
-        console.log("📨 OrderCreated event received:", {
+    try {
+      const event = parseOrderCreatedEvent(value);
+
+      console.log("📨 OrderCreated event received:", {
+        topic,
+        partition,
+        offset: message.offset,
+        eventId: event.eventId,
+      });
+
+      // 1. Process the event.
+      //    This includes the PostgreSQL transaction.
+      await orderCreatedHandler.handle(event);
+
+      // 2. Only after the DB transaction succeeds,
+      //    commit the NEXT Kafka offset.
+      const nextOffset = (
+        BigInt(message.offset) + 1n
+      ).toString();
+
+      await consumer.commitOffsets([
+        {
           topic,
           partition,
-          offset: message.offset,
-          eventId: event.eventId,
-        });
+          offset: nextOffset,
+        },
+      ]);
 
-        await orderCreatedHandler.handle(event);
-      } catch (error) {
-        console.error(
-          "❌ Failed to process Kafka event:",
-          error
-        );
-      }
-    },
-  });
+      console.log(
+        `📌 Kafka offset committed: ${nextOffset}`
+      );
+    } catch (error) {
+      console.error(
+        "❌ Failed to process Kafka event:",
+        error
+      );
+
+      // DO NOT commit the offset.
+      //
+      // Kafka will continue to consider this message
+      // uncommitted, allowing it to be retried.
+      throw error;
+    }
+  },
+});
 };
