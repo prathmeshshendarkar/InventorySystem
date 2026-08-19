@@ -11,6 +11,7 @@ import { OutboxRelayService } from "../../services/outbox/outboxRelay.service";
 import { OutboxWorker } from "../../services/outbox/outboxWorker";
 import { KafkaOutboxPublisher } from "../../services/outbox/kafkaOutboxPublisher";
 import { OrderQueryService } from "../../services/getOrder/getOrder.service";
+import { UpdateOrderStatusService } from "../../services/updateOrderStatus/updateOrderStatus.service";
 
 const orderRepository = new OrderRepository();
 const orderItemRepository = new OrderItemRepository();
@@ -20,6 +21,10 @@ const processedEventRepository = new ProcessedEventRepository();
 const orderProjectionRepository = new OrderProjectionRepository();
 const orderQueryService = new OrderQueryService(
   orderProjectionRepository
+);
+const updateOrderStatusService = new UpdateOrderStatusService(
+  orderRepository,
+  outboxRepository
 );
 
 const outboxRelayService = new OutboxRelayService(
@@ -43,4 +48,5 @@ export {
   processedEventRepository,
   orderProjectionRepository,
   orderQueryService,
+  updateOrderStatusService
 };

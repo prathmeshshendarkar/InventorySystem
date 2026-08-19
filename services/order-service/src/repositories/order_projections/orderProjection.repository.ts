@@ -1,5 +1,5 @@
 import { Transaction } from "sequelize";
-import { OrderProjection } from "../../models";
+import { OrderProjection, OrderStatus } from "../../models";
 
 export interface CreateOrderProjectionInput {
   orderId: string;
@@ -38,5 +38,23 @@ export class OrderProjectionRepository {
       },
       transaction,
     });
+  }
+
+  async updateStatus(
+    orderId: string,
+    status: OrderStatus,
+    transaction: Transaction
+  ): Promise<[affectedCount: number]> {
+    return OrderProjection.update(
+      {
+        status,
+      },
+      {
+        where: {
+          orderId,
+        },
+        transaction,
+      }
+    );
   }
 }

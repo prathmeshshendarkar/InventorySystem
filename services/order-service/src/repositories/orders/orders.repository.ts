@@ -67,4 +67,14 @@ export class OrderRepository {
       }
     );
   }
+
+  async findByIdForUpdate(
+    orderId: string,
+    transaction: Transaction
+  ): Promise<Order | null> {
+    return Order.findByPk(orderId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+  }
 }

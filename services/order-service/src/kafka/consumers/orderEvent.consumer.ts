@@ -1,6 +1,9 @@
 import { createKafkaConsumer } from "../kafka.consumer";
-import { parseOrderCreatedEvent } from "../events/orderEvent.parser";
+import { parseOrderEvent } from "../events/orderEvent.parser";
+
 import { OrderCreatedHandler } from "../handlers/orderCreated.handler";
+import { OrderStatusChangedHandler } from "../handlers/orderStatusChanged.handler";
+
 import {
   processedEventRepository,
   orderProjectionRepository,
@@ -9,6 +12,12 @@ import {
 const ORDER_TOPIC =
   process.env.KAFKA_ORDER_TOPIC || "orders.events";
 
+const assertNever = (value: never): never => {
+  throw new Error(
+    `Unsupported order event type: ${String(value)}`
+  );
+};
+
 export const startOrderEventConsumer = async (): Promise<void> => {
   const consumer = await createKafkaConsumer();
 
@@ -16,6 +25,12 @@ export const startOrderEventConsumer = async (): Promise<void> => {
     processedEventRepository,
     orderProjectionRepository
   );
+
+  const orderStatusChangedHandler =
+    new OrderStatusChangedHandler(
+      processedEventRepository,
+      orderProjectionRepository
+    );
 
   await consumer.subscribe({
     topic: ORDER_TOPIC,
@@ -27,63 +42,75 @@ export const startOrderEventConsumer = async (): Promise<void> => {
   );
 
   await consumer.run({
-  autoCommit: false,
+    autoCommit: false,
 
-  eachMessage: async ({
-    topic,
-    partition,
-    message,
-  }) => {
-    const value = message.value?.toString();
+    eachMessage: async ({
+      topic,
+      partition,
+      message,
+    }) => {
+      const value = message.value?.toString();
 
-    if (!value) {
-      console.warn("⚠️ Kafka message has no value");
-      return;
-    }
+      if (!value) {
+        console.warn("⚠️ Kafka message has no value");
+        return;
+      }
 
-    try {
-      const event = parseOrderCreatedEvent(value);
+      try {
+        const event = parseOrderEvent(value);
 
-      console.log("📨 OrderCreated event received:", {
-        topic,
-        partition,
-        offset: message.offset,
-        eventId: event.eventId,
-      });
-
-      // 1. Process the event.
-      //    This includes the PostgreSQL transaction.
-      await orderCreatedHandler.handle(event);
-
-      // 2. Only after the DB transaction succeeds,
-      //    commit the NEXT Kafka offset.
-      const nextOffset = (
-        BigInt(message.offset) + 1n
-      ).toString();
-
-      await consumer.commitOffsets([
-        {
+        console.log("📨 Order event received:", {
           topic,
           partition,
-          offset: nextOffset,
-        },
-      ]);
+          offset: message.offset,
+          eventId: event.eventId,
+          eventType: event.eventType,
+        });
 
-      console.log(
-        `📌 Kafka offset committed: ${nextOffset}`
-      );
-    } catch (error) {
-      console.error(
-        "❌ Failed to process Kafka event:",
-        error
-      );
+        // 1. Process the event.
+        //    This includes the PostgreSQL transaction.
+        switch (event.eventType) {
+          case "OrderCreated":
+            await orderCreatedHandler.handle(event);
+            break;
 
-      // DO NOT commit the offset.
-      //
-      // Kafka will continue to consider this message
-      // uncommitted, allowing it to be retried.
-      throw error;
-    }
-  },
-});
+          case "OrderStatusChanged":
+            await orderStatusChangedHandler.handle(event);
+            break;
+
+          default:
+            assertNever(event);
+        }
+
+        // 2. Only after the DB transaction succeeds,
+        //    commit the NEXT Kafka offset.
+        const nextOffset = (
+          BigInt(message.offset) + 1n
+        ).toString();
+
+        await consumer.commitOffsets([
+          {
+            topic,
+            partition,
+            offset: nextOffset,
+          },
+        ]);
+
+        console.log(
+          `📌 Kafka offset committed: ${nextOffset}`
+        );
+      } catch (error) {
+        console.error(
+          "❌ Failed to process Kafka event:",
+          error
+        );
+
+        // DO NOT commit the offset.
+        //
+        // Kafka will continue to consider this message
+        // uncommitted, allowing it to be retried.
+        throw error;
+      }
+    },
+  });
 };
