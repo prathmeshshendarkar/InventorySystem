@@ -23,8 +23,13 @@ export const validate = (schema: Joi.ObjectSchema, source: ValidationSource = 'b
 
         // Store validated values on req.validated
         if (!req.validated) {
-            req.validated = {};
+            req.validated = {
+                body: {},
+                query: {},
+                params: {},
+            };
         }
+
         req.validated[source] = value;
         
         next();
